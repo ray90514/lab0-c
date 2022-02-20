@@ -58,14 +58,12 @@ bool q_insert_head(struct list_head *head, char *s)
     if (!element)
         return false;
 
-    int len = strlen(s);
-    element->value = malloc(len + 1);
+    element->value = strdup(s);
     if (!element->value) {
         free(element);
         return false;
     }
 
-    strncpy(element->value, s, len + 1);
     list_add(&element->list, head);
     return true;
 }
@@ -86,14 +84,12 @@ bool q_insert_tail(struct list_head *head, char *s)
     if (!element)
         return false;
 
-    int len = strlen(s);
-    element->value = malloc(len + 1);
+    element->value = strdup(s);
     if (!element->value) {
         free(element);
         return false;
     }
 
-    strncpy(element->value, s, len + 1);
     list_add_tail(&element->list, head);
     return true;
 }
