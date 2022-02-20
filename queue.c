@@ -213,7 +213,7 @@ bool q_delete_mid(struct list_head *head)
 bool q_delete_dup(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
-    if (!head || head->next == head->prev)
+    if (!head)
         return false;
 
     struct list_head *node = head->next->next;
@@ -231,9 +231,11 @@ bool q_delete_dup(struct list_head *head)
                 prev_element = element;
                 element = list_entry(node, element_t, list);
             }
+            q_release_element(prev_element);
             prev->next = node;
             node->prev = prev;
-            node = node->next;
+            if (node != head)
+                node = node->next;
         } else {
             node = node->next;
             prev = prev->next;
@@ -259,6 +261,8 @@ void q_swap(struct list_head *head)
             struct list_head *prev = node->prev;
             prev->next = node->next;
             node->prev = prev->prev;
+            node->next->prev = prev;
+            prev->prev->next = node;
             prev->prev = node;
             node->next = prev;
             node = prev;
@@ -298,6 +302,40 @@ void q_reverse(struct list_head *head)
     head->prev = next;
 }
 
+struct list_head *merge(struct list_head *a, struct list_head *b)
+{
+    if (!a || !b)
+        return a ? a : b;
+
+    struct list_head *head = NULL;
+    struct list_head **tail = &head;
+
+    for (;;) {
+        /* if equal, take 'a' -- important for sort stability */
+        char *sa = list_entry(a, element_t, list)->value;
+        char *sb = list_entry(b, element_t, list)->value;
+
+        if (strcmp(sa, sb) <= 0) {
+            *tail = a;
+            tail = &a->next;
+            a = a->next;
+            if (!a) {
+                *tail = b;
+                break;
+            }
+        } else {
+            *tail = b;
+            tail = &b->next;
+            b = b->next;
+            if (!b) {
+                *tail = a;
+                break;
+            }
+        }
+    }
+    return head;
+}
+
 /*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
@@ -305,9 +343,42 @@ void q_reverse(struct list_head *head)
  */
 void q_sort(struct list_head *head)
 {
+    /* https://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation_using_lists
+     */
     if (!head || head->next == head->prev)
         return;
 
-    /*TODO*/
-    return;
+    struct list_head *array[32] = {};
+    struct list_head *result = head->next;
+    struct list_head *next;
+    int i;
+
+    head->prev->next = NULL;
+    while (result) {
+        next = result->next;
+        result->next = NULL;
+        for (i = 0; i < 32 && array[i]; i++) {
+            result = merge(array[i], result);
+            array[i] = NULL;
+        }
+
+        if (i == 32)
+            i--;
+        array[i] = result;
+        result = next;
+    }
+
+    /*merge final*/
+    result = NULL;
+    for (i = 0; i < 32; i++) {
+        result = merge(array[i], result);
+    }
+    head->next = result;
+    struct list_head *node = head;
+    while (node->next) {
+        node->next->prev = node;
+        node = node->next;
+    }
+    node->next = head;
+    head->prev = node;
 }
