@@ -182,15 +182,15 @@ bool q_delete_mid(struct list_head *head)
     if (!head || list_empty(head))
         return false;
 
-    struct list_head *forward = head->next;
+    struct list_head *forward = head;
     struct list_head *backward = head;
 
-    while (forward != backward) {
-        backward = backward->prev;
+    do {
+        forward = forward->next;
         if (forward == backward)
             break;
-        forward = forward->next;
-    }
+        backward = backward->prev;
+    } while (forward != backward);
 
     list_del(forward);
     q_release_element(list_entry(forward, element_t, list));
@@ -222,11 +222,12 @@ bool q_delete_dup(struct list_head *head)
         if (strcmp(element->value, prev_element->value) == 0) {
             while (node != head &&
                    strcmp(element->value, prev_element->value) == 0) {
-                node = node->next;
                 q_release_element(prev_element);
+                node = node->next;
                 prev_element = element;
                 element = list_entry(node, element_t, list);
             }
+
             q_release_element(prev_element);
             prev->next = node;
             node->prev = prev;
@@ -249,22 +250,15 @@ void q_swap(struct list_head *head)
     if (!head || list_empty(head))
         return;
 
-    struct list_head *node = head->next;
-    int toggle = 0;
-
-    while (node != head) {
-        if (toggle) {
-            struct list_head *prev = node->prev;
-            prev->next = node->next;
-            node->prev = prev->prev;
-            node->next->prev = prev;
-            prev->prev->next = node;
-            prev->prev = node;
-            node->next = prev;
-            node = prev;
-        }
-        toggle = !toggle;
-        node = node->next;
+    for (struct list_head *node = head->next;
+         node != head && node->next != head; node = node->next) {
+        struct list_head *next = node->next;
+        node->prev->next = next;
+        next->next->prev = node;
+        node->next = next->next;
+        next->next = node;
+        next->prev = node->prev;
+        node->prev = next;
     }
 }
 
@@ -280,22 +274,14 @@ void q_reverse(struct list_head *head)
     if (!head || list_empty(head))
         return;
 
-    struct list_head *node;
-    struct list_head *safe;
-
-    list_for_each_safe (node, safe, head) {
-        struct list_head *next = node->next;
-        struct list_head *prev = node->prev;
-
-        node->next = prev;
+    struct list_head *node = head;
+    struct list_head *next = node->next;
+    do {
+        node->next = node->prev;
         node->prev = next;
-    }
-
-    struct list_head *next = head->next;
-    struct list_head *prev = head->prev;
-
-    head->next = prev;
-    head->prev = next;
+        node = next;
+        next = node->next;
+    } while (node != head);
 }
 
 struct list_head *merge(struct list_head *a, struct list_head *b)
