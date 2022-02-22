@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include "dudect/fixture.h"
 #include "list.h"
+#include "random.h"
 
 /* Our program needs to use regular malloc/free */
 #define INTERNAL 1
@@ -762,6 +763,43 @@ static bool do_show(int argc, char *argv[])
     return show_queue(0);
 }
 
+void q_shuffle(struct list_head *head)
+{
+    if (!head)
+        return;
+
+    for (int i = q_size(head); i > 0; i--) {
+        int rand = 0;
+        randombytes((uint8_t *) &rand, sizeof(rand) - 1);
+        struct list_head *node = head->next;
+        for (int j = rand % i; j > 0; j--) {
+            node = node->next;
+        }
+        list_move_tail(node, head);
+    }
+}
+
+static bool do_shuffle(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s takes no arguments", argv[0]);
+        return false;
+    }
+
+    if (!l_meta.l)
+        report(3, "Warning: Calling shuffle on null queue");
+    error_check();
+
+    set_noallocate_mode(true);
+    if (exception_setup(true))
+        q_shuffle(l_meta.l);
+    exception_cancel();
+
+    set_noallocate_mode(false);
+    show_queue(3);
+    return !error_check();
+}
+
 static void console_init()
 {
     ADD_COMMAND(new, "                | Create new queue");
@@ -795,6 +833,7 @@ static void console_init()
         dedup, "                | Delete all nodes that have duplicate string");
     ADD_COMMAND(swap,
                 "                | Swap every two adjacent nodes in queue");
+    ADD_COMMAND(shuffle, "                | Shuffle every nodes in queue");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
