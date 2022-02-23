@@ -18,7 +18,7 @@
 
 #define LISTENQ 1024 /* second argument to listen() */
 #define MAXLINE 1024 /* max length of a line */
-#define RIO_BUFSIZE 8192
+#define _RIO_BUFSIZE 8192
 
 #ifndef DEFAULT_PORT
 #define DEFAULT_PORT 9999 /* use this port if none given as arg to main() */
@@ -32,10 +32,10 @@
 #endif
 
 typedef struct {
-    int rio_fd;                /* descriptor for this buf */
-    int rio_cnt;               /* unread byte in this buf */
-    char *rio_bufptr;          /* next unread byte in this buf */
-    char rio_buf[RIO_BUFSIZE]; /* internal buffer */
+    int rio_fd;                 /* descriptor for this buf */
+    int rio_cnt;                /* unread byte in this buf */
+    char *rio_bufptr;           /* next unread byte in this buf */
+    char rio_buf[_RIO_BUFSIZE]; /* internal buffer */
 } _rio_t;
 
 /* Simplifies calls to bind(), connect(), and accept() */
@@ -51,8 +51,6 @@ typedef struct {
     const char *extension;
     const char *mime_type;
 } mime_map;
-
-extern int listenfd;
 
 void rio_readinitb(_rio_t *rp, int fd);
 

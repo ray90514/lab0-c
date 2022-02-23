@@ -86,7 +86,6 @@ mime_map meme_types[] = {
 };
 
 char *default_mime_type = "text/plain";
-int listenfd = 0;
 
 void rio_readinitb(_rio_t *rp, int fd)
 {
@@ -296,7 +295,7 @@ void parse_request(int fd, http_request *req)
 #ifdef LOG_ACCESS
 void log_access(int status, struct sockaddr_in *c_addr, http_request *req)
 {
-    printf("%s:%d %d - '%s' (%s)", inet_ntoa(c_addr->sin_addr),
+    printf("%s:%d %d - '%s' (%s)\n", inet_ntoa(c_addr->sin_addr),
            ntohs(c_addr->sin_port), status, req->filename,
            get_mime_type(req->filename));
 }
@@ -315,11 +314,22 @@ void client_error(int fd, int status, char *msg, char *longmsg)
 char *process(int fd, struct sockaddr_in *clientaddr)
 {
 #ifdef LOG_ACCESS
-    // printf("accept request, fd is %d, pid is %d", fd, getpid());
+    printf("accept request, fd is %d, pid is %d\n", fd, getpid());
 #endif
     http_request req;
     parse_request(fd, &req);
     int status = 200;
+
+    char *p = req.filename;
+    /* Change '/' to ' ' */
+    if (p) {
+        while ((*p) != '\0') {
+            ++p;
+            if (*p == '/') {
+                *p = ' ';
+            }
+        }
+    }
     client_error(fd, status, "", "");
 #ifdef LOG_ACCESS
     log_access(status, clientaddr, &req);
