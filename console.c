@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "report.h"
+#include "tiny.h"
 
 /* Some global values */
 int simulation = 0;
@@ -36,7 +37,7 @@ static double last_time;
  * Must create stack of buffers to handle I/O with nested source commands.
  */
 
-#define RIO_BUFSIZE 8192
+//#define RIO_BUFSIZE 8192
 typedef struct RIO_ELE rio_t, *rio_ptr;
 
 struct RIO_ELE {
@@ -397,6 +398,29 @@ static bool do_time(int argc, char *argv[])
     return ok;
 }
 
+static bool do_web_cmd(int argc, char *argv[])
+{
+    int port = DEFAULT_PORT;
+
+    if (listenfd > 0)
+        return true;
+    if (argc == 2) {
+        get_int(argv[1], &port);
+    }
+
+    listenfd = open_listenfd(port);
+    if (listenfd > 0) {
+        report(1, "listen on port %d, fd is %d", port, listenfd);
+    } else {
+        report(1, "Fail to run web server");
+        return false;
+    }
+    int flags = fcntl(listenfd, F_GETFL);
+    fcntl(listenfd, F_SETFL, flags | O_NONBLOCK);
+
+    return true;
+}
+
 /* Initialize interpreter */
 void init_cmd()
 {
@@ -411,6 +435,7 @@ void init_cmd()
     ADD_COMMAND(source, " file           | Read commands from source file");
     ADD_COMMAND(log, " file           | Copy output to file");
     ADD_COMMAND(time, " cmd arg ...    | Time command execution");
+    ADD_COMMAND(web_cmd, "                | Run web server");
     add_cmd("#", do_comment_cmd, " ...            | Display comment");
     add_param("simulation", &simulation, "Start/Stop simulation mode", NULL);
     add_param("verbose", &verblevel, "Verbosity level", NULL);
