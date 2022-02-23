@@ -568,7 +568,7 @@ int cmd_select(int nfds,
                fd_set *exceptfds,
                struct timeval *timeout)
 {
-    int infd = STDIN_FILENO;
+    int infd;
     fd_set local_readset;
 
     if (cmd_done())
@@ -580,6 +580,7 @@ int cmd_select(int nfds,
             readfds = &local_readset;
 
         /* Add input fd to readset for select */
+        infd = buf_stack->fd;
         FD_ZERO(readfds);
         FD_SET(infd, readfds);
 
