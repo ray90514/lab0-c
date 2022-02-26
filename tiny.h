@@ -1,3 +1,6 @@
+#ifndef TINY_H
+#define TINY_H
+
 #include <arpa/inet.h> /* inet_ntoa */
 #include <dirent.h>
 #include <errno.h>
@@ -84,3 +87,4 @@ void client_error(int fd, int status, char *msg, char *longmsg);
 char *process(int fd, struct sockaddr_in *clientaddr);
 
 // void print_help();
+#endif

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -278,38 +279,54 @@ void q_reverse(struct list_head *head)
 
 struct list_head *merge(struct list_head *a, struct list_head *b)
 {
-    if (!a || !b)
-        return a ? a : b;
+    struct list_head head = {.next = NULL};
+    struct list_head *tail = &head;
 
-    struct list_head *head = NULL;
-    struct list_head **tail = &head;
-
-    for (;;) {
-        /* if equal, take 'a' -- important for sort stability */
+    while (a && b) {
         char *sa = list_entry(a, element_t, list)->value;
         char *sb = list_entry(b, element_t, list)->value;
 
-        if (strcmp(sa, sb) <= 0) {
-            *tail = a;
-            tail = &a->next;
-            a = a->next;
-            if (!a) {
-                *tail = b;
-                break;
-            }
-        } else {
-            *tail = b;
-            tail = &b->next;
-            b = b->next;
-            if (!b) {
-                *tail = a;
-                break;
-            }
-        }
+        /* if equal, take 'a' -- important for sort stability */
+        struct list_head **smaller = strcmp(sa, sb) <= 0 ? &a : &b;
+        tail->next = *smaller;
+        tail = tail->next;
+        *smaller = (*smaller)->next;
     }
+
+    tail->next = (struct list_head *) ((uintptr_t) a | (uintptr_t) b);
+    return head.next;
+}
+
+struct list_head *merge_final(struct list_head *head,
+                              struct list_head *a,
+                              struct list_head *b)
+{
+    struct list_head *tail = head;
+
+    while (a && b) {
+        char *sa = list_entry(a, element_t, list)->value;
+        char *sb = list_entry(b, element_t, list)->value;
+
+        /* if equal, take 'a' -- important for sort stability */
+        struct list_head **smaller = strcmp(sa, sb) <= 0 ? &a : &b;
+        tail->next = *smaller;
+        (*smaller)->prev = tail;
+        tail = tail->next;
+        *smaller = (*smaller)->next;
+    }
+
+    tail->next = (struct list_head *) ((uintptr_t) a | (uintptr_t) b);
+    while (tail->next) {
+        tail->next->prev = tail;
+        tail = tail->next;
+    }
+
+    tail->next = head;
+    head->prev = tail;
     return head;
 }
 
+#define SORT_BUFSIZE 32
 /*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
@@ -322,7 +339,7 @@ void q_sort(struct list_head *head)
     if (!head || head->next == head->prev)
         return;
 
-    struct list_head *array[32] = {};
+    struct list_head *pending[SORT_BUFSIZE] = {};
     struct list_head *result = head->next;
     struct list_head *next;
     int i;
@@ -331,28 +348,21 @@ void q_sort(struct list_head *head)
     while (result) {
         next = result->next;
         result->next = NULL;
-        for (i = 0; i < 32 && array[i]; i++) {
-            result = merge(array[i], result);
-            array[i] = NULL;
+        for (i = 0; i < SORT_BUFSIZE && pending[i]; i++) {
+            result = merge(pending[i], result);
+            pending[i] = NULL;
         }
 
-        if (i == 32)
+        if (i == SORT_BUFSIZE)
             i--;
-        array[i] = result;
+        pending[i] = result;
         result = next;
     }
 
     /*merge final*/
     result = NULL;
-    for (i = 0; i < 32; i++) {
-        result = merge(array[i], result);
+    for (i = 0; i < SORT_BUFSIZE - 1; i++) {
+        result = merge(pending[i], result);
     }
-    head->next = result;
-    struct list_head *node = head;
-    while (node->next) {
-        node->next->prev = node;
-        node = node->next;
-    }
-    node->next = head;
-    head->prev = node;
+    merge_final(head, result, pending[SORT_BUFSIZE - 1]);
 }

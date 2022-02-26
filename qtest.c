@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include "dudect/fixture.h"
 #include "list.h"
-#include "random.h"
 
 /* Our program needs to use regular malloc/free */
 #define INTERNAL 1
@@ -869,10 +868,8 @@ void q_shuffle(struct list_head *head)
         return;
 
     for (int i = q_size(head); i > 0; i--) {
-        int rand = 0;
-        randombytes((uint8_t *) &rand, sizeof(rand) - 1);
         struct list_head *node = head->next;
-        for (int j = rand % i; j > 0; j--) {
+        for (int j = rand() % i; j > 0; j--) {
             node = node->next;
         }
         list_move_tail(node, head);

@@ -19,7 +19,7 @@
 #include "tiny.h"
 
 /* Some global values */
-int listenfd = 0;
+int listenfd = -1;
 int simulation = 0;
 bool noise = true;
 static cmd_ptr cmd_list = NULL;
@@ -437,7 +437,7 @@ void init_cmd()
     ADD_COMMAND(source, " file           | Read commands from source file");
     ADD_COMMAND(log, " file           | Copy output to file");
     ADD_COMMAND(time, " cmd arg ...    | Time command execution");
-    ADD_COMMAND(web_cmd, " [port]     | Run web server");
+    ADD_COMMAND(web_cmd, " [port]         | Run web server");
     add_cmd("#", do_comment_cmd, " ...            | Display comment");
     add_param("simulation", &simulation, "Start/Stop simulation mode", NULL);
     add_param("verbose", &verblevel, "Verbosity level", NULL);
