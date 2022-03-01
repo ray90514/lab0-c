@@ -84,11 +84,11 @@ static bool report(void)
     double number_traces_max_t = t->n[0] + t->n[1];
     double max_tau = max_t / sqrt(number_traces_max_t);
 
-    printf("\033[A\033[2K");
-    printf("meas: %7.2lf M, ", (number_traces_max_t / 1e6));
     if (number_traces_max_t < enough_measure) {
-        printf("not enough measurements (%.0f still to go).\n",
+        printf("meas: %7.2lf M, not enough measurements (%.0f still to go).\n",
+               (number_traces_max_t / 1e6),
                enough_measure - number_traces_max_t);
+        printf("\033[A\033[2K");
         return false;
     }
 
@@ -102,7 +102,9 @@ static bool report(void)
      *            detect the leak, if present. "barely detect the
      *            leak" = have a t value greater than 5.
      */
-    printf("max t: %+7.2f, max tau: %.2e, (5/tau)^2: %.2e.\n", max_t, max_tau,
+    printf("\033[A\033[2K");
+    printf("meas: %7.2lf M, max t: %+7.2f, max tau: %.2e, (5/tau)^2: %.2e.\n",
+           (number_traces_max_t / 1e6), max_t, max_tau,
            (double) (5 * 5) / (double) (max_tau * max_tau));
 
     /* Definitely not constant time */
@@ -158,12 +160,11 @@ static bool TEST_CONST(char *text, int mode)
     t = malloc(sizeof(t_ctx));
 
     for (int cnt = 0; cnt < test_tries; ++cnt) {
-        printf("Testing %s...(%d/%d)\n\n", text, cnt, test_tries);
+        printf("Testing %s...(%d/%d)\n", text, cnt, test_tries);
         init_once();
         for (int i = 0; i < enough_measure / (n_measure - drop_size * 2) + 1;
              ++i)
             result = doit(mode);
-        printf("\033[A\033[2K\033[A\033[2K");
         if (result == true)
             break;
     }
