@@ -115,9 +115,11 @@ void measure(int64_t *before_ticks,
     case test_remove_tail:
         for (size_t i = drop_size; i < n_measure - drop_size; i++) {
             dut_new();
-            dut_insert_head(
-                get_random_string(),
-                *(uint16_t *) (input_data + i * chunk_size) % 10000);
+            uint16_t size = *(uint16_t *) (input_data + i * chunk_size) % 10000;
+            if (size) {
+                dut_insert_head(get_random_string(), size - 1);
+                dut_insert_tail(get_random_string(), 1);
+            }
             before_ticks[i] = cpucycles();
             element_t *e = q_remove_tail(l, NULL, 0);
             after_ticks[i] = cpucycles();
@@ -129,7 +131,7 @@ void measure(int64_t *before_ticks,
     default:
         for (size_t i = drop_size; i < n_measure - drop_size; i++) {
             dut_new();
-            dut_insert_head(
+            dut_insert_tail(
                 get_random_string(),
                 *(uint16_t *) (input_data + i * chunk_size) % 10000);
             before_ticks[i] = cpucycles();

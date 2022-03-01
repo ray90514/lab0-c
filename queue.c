@@ -133,7 +133,6 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *element = list_last_entry(head, element_t, list);
-    /*list_del_init*/
     list_del(&element->list);
     if (sp) {
         strncpy(sp, element->value, bufsize - 1);
